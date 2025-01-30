@@ -7,6 +7,12 @@ pipeline {
     }
 
     stages {
+        stage('Checkout SCM') {
+            steps {
+                checkout scm  // Récupère le code source depuis le dépôt Git
+            }
+        }
+
         stage('Setup Python Environment') {
             steps {
                 script {
@@ -29,7 +35,7 @@ pipeline {
         stage('Archive Test Results') {
             steps {
                 // Stocker les résultats dans Jenkins, mais on les a déjà dans le répertoire local
-                echo "Test results stored in %TEST_RESULTS_DIR%\\test-results.xml"
+                archiveArtifacts artifacts: '%TEST_RESULTS_DIR%\\test-results.xml', allowEmptyArchive: true
             }
         }
     }
