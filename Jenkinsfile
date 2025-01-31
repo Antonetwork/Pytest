@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'windowsSlave' }  // Utiliser le slave Windows avec ce label
+    agent { label 'Slave1' }  // Utiliser le slave Windows avec ce label
 
     environment {
         PYTHON_ENV = 'venv'  // Nom de l'environnement virtuel Python
