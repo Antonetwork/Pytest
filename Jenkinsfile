@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'Slave1' }  // Exécute sur Slave1
+    agent { label 'Slave2' }  // Exécute sur Slave1
 
     environment {
         PYTHON_ENV = 'venv'  // Nom de l'environnement virtuel Python
