@@ -1,22 +1,35 @@
 pipeline {
-    agent { label 'Slave1' }  // Utiliser le slave Windows avec ce label
+    agent { label 'Slave1' }  // Exécute sur Slave1
 
     environment {
         PYTHON_ENV = 'venv'  // Nom de l'environnement virtuel Python
-        TEST_RESULTS_DIR = 'C:\\Jenkins\\test_results'  // Répertoire sur le slave Windows pour les résultats des tests
+        WORKSPACE_DIR = 'C:\\Jenkins\\workspace\\Pytest'
+        TEST_RESULTS_DIR = 'C:\\Jenkins\\test_results'  // Dossier pour stocker les résultats
     }
 
     stages {
+        stage('Clean Workspace') {
+            steps {
+                deleteDir() // Supprime tout le contenu du workspace avant le checkout
+            }
+        }
+
         stage('Checkout SCM') {
             steps {
-                checkout scm  // Récupère le code source depuis le dépôt Git
+                script {
+                    try {
+                        checkout scm  // Récupère le code source depuis Git
+                    } catch (Exception e) {
+                        error "Échec du checkout : ${e}"
+                    }
+                }
             }
         }
 
         stage('Setup Python Environment') {
             steps {
                 script {
-                    // Créer et activer un environnement virtuel Python
+                    bat 'python --version' // Vérifie si Python est installé
                     bat 'python -m venv %PYTHON_ENV%'
                     bat '%PYTHON_ENV%\\Scripts\\pip install -r requirements.txt'
                 }
@@ -26,7 +39,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    // Exécuter pytest et générer un rapport XML dans le répertoire de résultats
+                    bat "mkdir %TEST_RESULTS_DIR%"  // Crée le dossier pour les résultats s'il n'existe pas
                     bat '%PYTHON_ENV%\\Scripts\\pytest --maxfail=1 --disable-warnings -q --junitxml=%TEST_RESULTS_DIR%\\test-results.xml'
                 }
             }
@@ -34,15 +47,20 @@ pipeline {
 
         stage('Archive Test Results') {
             steps {
-                // Stocker les résultats dans Jenkins, mais on les a déjà dans le répertoire local
-                archiveArtifacts artifacts: '%TEST_RESULTS_DIR%\\test-results.xml', allowEmptyArchive: true
+                script {
+                    if (fileExists('%TEST_RESULTS_DIR%\\test-results.xml')) {
+                        archiveArtifacts artifacts: '%TEST_RESULTS_DIR%\\test-results.xml', allowEmptyArchive: true
+                    } else {
+                        error "Le fichier test-results.xml n'a pas été trouvé."
+                    }
+                }
             }
         }
     }
 
     post {
         always {
-            echo "Test results are stored at %TEST_RESULTS_DIR%\\test-results.xml"
+            echo "Les résultats sont stockés sur le Slave dans %TEST_RESULTS_DIR%\\test-results.xml"
         }
     }
 }
